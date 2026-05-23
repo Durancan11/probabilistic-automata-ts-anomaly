@@ -1,0 +1,22 @@
+{
+    "paths": {
+        "skab_valve1": "datasets/valve1",
+        "skab_valve2": "datasets/valve2",
+        "batadal": "datasets/BATADAL_dataset04.csv"
+    },
+    "automata_params": {
+        "window_size": 4,
+        "alphabet_size": 3
+    },
+    "training_params": {
+        "epochs": 50,
+        "batch_size": 32,
+        "early_stopping_patience": 5,
+        "random_seeds": [42, 123, 2026, 7, 999]
+    },
+    "split_ratios": {
+        "train": 0.60,
+        "validation": 0.20,
+        "test": 0.20
+    }
+}
