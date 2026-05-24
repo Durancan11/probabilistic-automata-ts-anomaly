@@ -129,3 +129,43 @@ for s in seeds:
 print("\n=== DENEY SONUÇLARI (BATADAL) ===")
 print(f"LSTM F1-Score Ortalama: {np.mean(lstm_f1_scores):.4f} (± {np.std(lstm_f1_scores):.4f})")
 print(f"GRU F1-Score Ortalama: {np.mean(gru_f1_scores):.4f} (± {np.std(gru_f1_scores):.4f})")
+
+from src.utils.analysis import run_parameter_analysis
+
+print("\n--- Otomata Parametre Analizi Başlıyor ---")
+
+w_varyasyonlari = config["automata_params"].get("window_variations", [3, 4, 5, 6])
+a_varyasyonlari = config["automata_params"].get("alphabet_variations", [3, 4, 5, 6])
+
+analiz_sonuclari = run_parameter_analysis(train_df["PC1"].values, w_varyasyonlari, a_varyasyonlari)
+
+print("\n[PARAMETRE ANALİZ TABLOSU]")
+print(analiz_sonuclari.to_string(index=False))
+
+from src.utils.preprocessing import add_gaussian_noise
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+
+def print_metrics(model_name, y_true, y_pred):
+    acc = accuracy_score(y_true, y_pred)
+    prec = precision_score(y_true, y_pred, zero_division=0)
+    rec = recall_score(y_true, y_pred, zero_division=0)
+    f1 = f1_score(y_true, y_pred, zero_division=0)
+    print(f"[{model_name}] Accuracy: {acc:.4f} | Precision: {prec:.4f} | Recall: {rec:.4f} | F1-Score: {f1:.4f}")
+
+print("\n--- Gürültülü Veri (Gaussian Noise) Senaryosu Başlıyor ---")
+
+X_test_noisy = add_gaussian_noise(X_test_dl, mean=0.0, std=0.05)
+X_test_noisy_seq, _ = create_sequences(X_test_noisy, y_test_dl, time_steps)
+
+lstm_preds_prob_noisy = lstm_model.predict(X_test_noisy_seq, verbose=0)
+lstm_preds_noisy = np.where(lstm_preds_prob_noisy > 0.5, 1, 0)
+
+# Orijinal performans için son eğitilen LSTM modelinin tahminlerini alıyoruz
+lstm_preds_prob_orijinal = lstm_model.predict(X_test_seq, verbose=0)
+lstm_preds_orijinal = np.where(lstm_preds_prob_orijinal > 0.5, 1, 0)
+
+print("Orijinal Test Verisi Performansı:")
+print_metrics("LSTM - Original", y_test_seq, lstm_preds_orijinal)
+
+print("\nGürültü Eklenmiş (Noisy) Test Verisi Performansı:")
+print_metrics("LSTM - Noisy", y_test_seq, lstm_preds_noisy)
