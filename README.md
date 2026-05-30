@@ -47,15 +47,15 @@ Siber saldırı (gizli manipülasyon) senaryolarında modellerin verdiği tepkil
 
 **Olasılıksal Otomata (White-Box):**
 *Derin öğrenme modellerine kıyasla çok daha az "Yanlış Alarm" (Sadece 35 FP) üreterek temkinli yapısını kanıtlamıştır. Black-box modellere göre çok daha güvenilir bir referans noktası sunar.*
-![Automata Confusion Matrix](Automata.png)
+![Automata Confusion Matrix](Grafikler/Automata.png)
 
 **LSTM Modeli (Black-Box):**
 *Dengesiz veri setinde anomali yakalamaya çalışırken kontrolü kaybetmiş ve yüksek oranda yanlış alarm (50 FP) üretmiştir.*
-![LSTM Confusion Matrix](LSTM.png)
+![LSTM Confusion Matrix](Grafikler/LSTM.png)
 
 **GRU Modeli (Black-Box):**
 *Benzer şekilde yüksek yanlış alarm (73 FP) oranıyla sinsi siber saldırı verilerinde en çok zorlanan model olmuştur.*
-![GRU Confusion Matrix](GRU.png)
+![GRU Confusion Matrix](Grafikler/GRU.png)
 
 ---
 
@@ -65,11 +65,10 @@ Derin öğrenme modellerinin (LSTM ve GRU) eşik değerleri değiştikçe göste
 Grafiklerdeki karakteristik "L" şekilli ani çöküş; modelin Recall (yakalama oranı) değerini azıcık bile artırmaya çalıştığında Precision (isabet oranı) değerinin anında sıfıra indiğini kanıtlamaktadır. Bu durum, Black-Box modellerin dengesiz zaman serilerindeki (imbalanced time-series) ezberci zafiyetini görsel olarak ispatlar.
 
 **LSTM PR Eğrisi:**
-![LSTM PR Curve](LSTM%20Grafik.png)
+![LSTM PR Curve](Grafikler/LSTM%20Grafik.png)
 
 **GRU PR Eğrisi:**
-![GRU PR Curve](GRU%20Grafik.png)
-
+![GRU PR Curve](Grafikler/GRU%20Grafik.png)
 ## 🔍 Olasılıksal Açıklanabilirlik Modülü (Explainability JSON)
 
 Automata modelinin en büyük gücü olan "açıklanabilirlik" özelliği, sisteme entegre edilen bir JSON modülü ile kanıtlanmıştır. Bir anomali (veya normal durum) tespit edildiğinde sistem arka planda şu çıktıyı üretir:
