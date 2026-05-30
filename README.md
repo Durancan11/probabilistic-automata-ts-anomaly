@@ -45,30 +45,50 @@ Proje kapsamında modellerin BATADAL veri seti üzerindeki karakterleri ve zafiy
 ### 1. Confusion Matrix (Karmaşıklık Matrisi) Karşılaştırması
 Siber saldırı (gizli manipülasyon) senaryolarında modellerin verdiği tepkiler ve ürettikleri Yanlış Alarm (False Positive) oranları karşılaştırılmıştır.
 
-**Olasılıksal Otomata (White-Box):**
-*Derin öğrenme modellerine kıyasla çok daha az "Yanlış Alarm" (Sadece 35 FP) üreterek temkinli yapısını kanıtlamıştır. Black-box modellere göre çok daha güvenilir bir referans noktası sunar.*
-![Automata Confusion Matrix](Grafikler/Automata.png)
+<br>
 
-**LSTM Modeli (Black-Box):**
-*Dengesiz veri setinde anomali yakalamaya çalışırken kontrolü kaybetmiş ve yüksek oranda yanlış alarm (50 FP) üretmiştir.*
-![LSTM Confusion Matrix](Grafikler/LSTM.png)
+<div align="center">
+  <h4>Olasılıksal Otomata (Beyaz Kutu)</h4>
+  <img src="Grafikler/Automata.png" width="550" alt="Automata Confusion Matrix">
+  <p><em>Derin öğrenme modellerine kıyasla çok daha az "Yanlış Alarm" (Sadece 35 FP) üreterek temkinli yapısını kanıtlamıştır. Black-box modellere göre çok daha güvenilir bir referans noktası sunar.</em></p>
+</div>
 
-**GRU Modeli (Black-Box):**
-*Benzer şekilde yüksek yanlış alarm (73 FP) oranıyla sinsi siber saldırı verilerinde en çok zorlanan model olmuştur.*
-![GRU Confusion Matrix](Grafikler/GRU.png)
+<br>
 
----
+<div align="center">
+  <h4>LSTM Modeli (Black-Box)</h4>
+  <img src="Grafikler/LSTM.png" width="550" alt="LSTM Confusion Matrix">
+  <p><em>Dengesiz veri setinde anomali yakalamaya çalışırken kontrolü kaybetmiş ve yüksek oranda yanlış alarm (50 FP) üretmiştir.</em></p>
+</div>
+
+<br>
+
+<div align="center">
+  <h4>GRU Modeli (Black-Box)</h4>
+  <img src="Grafikler/GRU.png" width="550" alt="GRU Confusion Matrix">
+  <p><em>Benzer şekilde yüksek yanlış alarm (73 FP) oranıyla sinsi siber saldırı verilerinde en çok zorlanan model olmuştur.</em></p>
+</div>
+
+<hr>
 
 ### 2. Precision-Recall (PR) Eğrileri
 Derin öğrenme modellerinin (LSTM ve GRU) eşik değerleri değiştikçe gösterdikleri performansı analiz etmek için PR eğrileri çizdirilmiştir. 
 
 Grafiklerdeki karakteristik "L" şekilli ani çöküş; modelin Recall (yakalama oranı) değerini azıcık bile artırmaya çalıştığında Precision (isabet oranı) değerinin anında sıfıra indiğini kanıtlamaktadır. Bu durum, Black-Box modellerin dengesiz zaman serilerindeki (imbalanced time-series) ezberci zafiyetini görsel olarak ispatlar.
 
-**LSTM PR Eğrisi:**
-![LSTM PR Curve](Grafikler/LSTM%20Grafik.png)
+<br>
 
-**GRU PR Eğrisi:**
-![GRU PR Curve](Grafikler/GRU%20Grafik.png)
+<div align="center">
+  <h4>LSTM PR Eğrisi</h4>
+  <img src="Grafikler/LSTM%20Grafik.png" width="600" alt="LSTM PR Curve">
+</div>
+
+<br>
+
+<div align="center">
+  <h4>GRU PR Eğrisi</h4>
+  <img src="Grafikler/GRU%20Grafik.png" width="600" alt="GRU PR Curve">
+</div>
 ## 🔍 Olasılıksal Açıklanabilirlik Modülü (Explainability JSON)
 
 Automata modelinin en büyük gücü olan "açıklanabilirlik" özelliği, sisteme entegre edilen bir JSON modülü ile kanıtlanmıştır. Bir anomali (veya normal durum) tespit edildiğinde sistem arka planda şu çıktıyı üretir:
