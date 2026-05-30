@@ -1,6 +1,8 @@
 import json
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from sklearn.utils.class_weight import compute_class_weight
@@ -12,9 +14,7 @@ from src.utils.analysis import run_parameter_analysis
 from src.models.automata import ProbabilisticAutomata
 from src.models.dl_models import build_lstm_model, train_dl_model, build_gru_model
 
-# ==========================================
 # YARDIMCI FONKSİYONLAR
-# ==========================================
 def predict_automata_sequence(automata_model, oruntuler_test, threshold):
     preds = [0] 
     for i in range(len(oruntuler_test) - 1):
@@ -31,9 +31,8 @@ def print_metrics(model_name, y_true, y_pred):
     f1 = f1_score(y_true, y_pred, zero_division=0)
     print(f"[{model_name}] Accuracy: {acc:.4f} | Precision: {prec:.4f} | Recall: {rec:.4f} | F1-Score: {f1:.4f}")
 
-# ==========================================
+
 # KONFİGÜRASYON VE VERİ YÜKLEME
-# ==========================================
 with open("configs/config.json", "r", encoding="utf-8") as file:
     config = json.load(file)
 
@@ -67,9 +66,8 @@ print(f"Train Verisi Satır Sayısı: {train_df.shape[0]}")
 print(f"Validation Verisi Satır Sayısı: {val_df.shape[0]}")
 print(f"Test Verisi Satır Sayısı: {test_df.shape[0]}")
 
-# ==========================================
+
 # AUTOMATA EĞİTİMİ VE DİNAMİK THRESHOLD
-# ==========================================
 w_size = config["automata_params"]["window_size"]
 a_size = config["automata_params"]["alphabet_size"]
 
@@ -88,9 +86,8 @@ for current_state, next_states in automata.transitions.items():
 dinamik_threshold = np.percentile(train_probs, 10) if train_probs else 0.05
 print(f"\n[*] Automata %10'luk Dinamik Threshold (BATADAL): {dinamik_threshold:.4f}")
 
-# ==========================================
+
 # DL VE AUTOMATA ORTAK TEST VERİSİ HAZIRLIĞI
-# ==========================================
 time_steps = config["automata_params"]["window_size"]
 
 X_train_dl = train_df[ozellikler].values
@@ -109,9 +106,8 @@ X_train_seq, y_train_seq = create_sequences(X_train_dl, y_train_dl, time_steps)
 X_val_seq, y_val_seq = create_sequences(X_val_dl, y_val_dl, time_steps)
 X_test_seq, y_test_seq = create_sequences(X_test_dl, y_test_dl, time_steps)
 
-# ==========================================
+
 # AUTOMATA GERÇEK TEST (INFERENCE)
-# ==========================================
 test_pc1 = test_df["PC1"].values
 sax_dizisi_test = automata.transform_to_sax(test_pc1)
 oruntuler_test = automata.extract_patterns(sax_dizisi_test)
@@ -133,9 +129,8 @@ aciklama_json = automata.explain_decision(time_step=6, current_state=ornek_mevcu
 print("\n[SYSTEM DECISION - GERÇEK VERİ İLE JSON FORMATI]")
 print(json.dumps(aciklama_json, indent=4))
 
-# ==========================================
+
 # DERİN ÖĞRENME (LSTM & GRU) EĞİTİMLERİ
-# ==========================================
 siniflar = np.unique(y_train_seq)
 agirliklar = compute_class_weight(class_weight='balanced', classes=siniflar, y=y_train_seq)
 sinif_agirliklari = dict(zip(siniflar, agirliklar))
@@ -160,9 +155,7 @@ history_gru = train_dl_model(
     epochs=epochs, batch_size=batch_size, patience=patience, seed=seed, class_weight=sinif_agirliklari
 )
 
-# ==========================================
 # İSTATİSTİKSEL DENEY (5 SEED)
-# ==========================================
 print("\n--- 5 Farklı Seed ile İstatistiksel Deney Başlıyor ---")
 seeds = config["training_params"]["random_seeds"]
 lstm_f1_scores = []
@@ -186,9 +179,8 @@ print(f"LSTM F1-Score Ortalama: {np.mean(lstm_f1_scores):.4f} (± {np.std(lstm_f
 print(f"GRU F1-Score Ortalama: {np.mean(gru_f1_scores):.4f} (± {np.std(gru_f1_scores):.4f})")
 print(f"Automata F1-Score (Tek Test): {f1_auto_batadal:.4f}")
 
-# ==========================================
+
 # AUTOMATA PARAMETRE ANALİZİ
-# ==========================================
 print("\n--- Otomata Parametre Analizi Başlıyor ---")
 w_varyasyonlari = config["automata_params"].get("window_variations", [3, 4, 5, 6])
 a_varyasyonlari = config["automata_params"].get("alphabet_variations", [3, 4, 5, 6])
@@ -215,3 +207,30 @@ print_metrics("LSTM - Original", y_test_seq, lstm_preds_orijinal)
 
 print("\nGürültü Eklenmiş (Noisy) Test Verisi Performansı:")
 print_metrics("LSTM - Noisy", y_test_seq, lstm_preds_noisy)
+
+# GÖRSELLEŞTİRME (CONFUSION MATRIX & PR CURVE)
+print("\n--- Grafik Çizim İşlemleri Başlıyor ---")
+import matplotlib.pyplot as plt
+
+# 1. Automata İçin Confusion Matrix
+plot_confusion_matrix(y_test_seq[:min_len], automata_preds_hizali[:min_len], model_name="Automata (BATADAL)")
+
+# 2. LSTM İçin Confusion Matrix (Orijinal Test Verisi)
+# LSTM tahminlerini görselleştirmek için modele tekrar tahmin yaptırıyoruz
+lstm_preds_prob = lstm_model.predict(X_test_seq, verbose=0)
+lstm_preds_gorsel = np.where(lstm_preds_prob > 0.5, 1, 0)
+plot_confusion_matrix(y_test_seq, lstm_preds_gorsel, model_name="LSTM (BATADAL)")
+
+# 3. GRU İçin Confusion Matrix (Orijinal Test Verisi)
+gru_preds_prob = gru_model.predict(X_test_seq, verbose=0)
+gru_preds_gorsel = np.where(gru_preds_prob > 0.5, 1, 0)
+plot_confusion_matrix(y_test_seq, gru_preds_gorsel, model_name="GRU (BATADAL)")
+
+# 4. Derin Öğrenme Modelleri İçin PR Curve
+try:
+    plot_pr_curve(y_test_seq, lstm_preds_prob, model_name="LSTM")
+    plot_pr_curve(y_test_seq, gru_preds_prob, model_name="GRU")
+except Exception as e:
+    print(f"\n[Uyarı] PR Curve çizdirilirken bir hata oluştu: {e}")
+
+print("\nGrafikler başarıyla oluşturuldu!")
