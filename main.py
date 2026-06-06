@@ -7,6 +7,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from sklearn.utils.class_weight import compute_class_weight
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from scipy.stats import wilcoxon
 
 from src.utils.visuals import plot_confusion_matrix, plot_pr_curve
 from src.utils.preprocessing import create_sequences, add_gaussian_noise
@@ -30,7 +31,6 @@ def print_metrics(model_name, y_true, y_pred):
     rec = recall_score(y_true, y_pred, zero_division=0)
     f1 = f1_score(y_true, y_pred, zero_division=0)
     print(f"[{model_name}] Accuracy: {acc:.4f} | Precision: {prec:.4f} | Recall: {rec:.4f} | F1-Score: {f1:.4f}")
-
 
 # KONFİGÜRASYON VE VERİ YÜKLEME
 with open("configs/config.json", "r", encoding="utf-8") as file:
@@ -66,7 +66,6 @@ print(f"Train Verisi Satır Sayısı: {train_df.shape[0]}")
 print(f"Validation Verisi Satır Sayısı: {val_df.shape[0]}")
 print(f"Test Verisi Satır Sayısı: {test_df.shape[0]}")
 
-
 # AUTOMATA EĞİTİMİ VE DİNAMİK THRESHOLD
 w_size = config["automata_params"]["window_size"]
 a_size = config["automata_params"]["alphabet_size"]
@@ -86,7 +85,6 @@ for current_state, next_states in automata.transitions.items():
 dinamik_threshold = np.percentile(train_probs, 10) if train_probs else 0.05
 print(f"\n[*] Automata %10'luk Dinamik Threshold (BATADAL): {dinamik_threshold:.4f}")
 
-
 # DL VE AUTOMATA ORTAK TEST VERİSİ HAZIRLIĞI
 time_steps = config["automata_params"]["window_size"]
 
@@ -105,7 +103,6 @@ y_test_dl = np.where(y_test_raw > 0, 1, 0)
 X_train_seq, y_train_seq = create_sequences(X_train_dl, y_train_dl, time_steps)
 X_val_seq, y_val_seq = create_sequences(X_val_dl, y_val_dl, time_steps)
 X_test_seq, y_test_seq = create_sequences(X_test_dl, y_test_dl, time_steps)
-
 
 # AUTOMATA GERÇEK TEST (INFERENCE)
 test_pc1 = test_df["PC1"].values
@@ -128,7 +125,6 @@ aciklama_json = automata.explain_decision(time_step=6, current_state=ornek_mevcu
 
 print("\n[SYSTEM DECISION - GERÇEK VERİ İLE JSON FORMATI]")
 print(json.dumps(aciklama_json, indent=4))
-
 
 # DERİN ÖĞRENME (LSTM & GRU) EĞİTİMLERİ
 siniflar = np.unique(y_train_seq)
@@ -179,6 +175,18 @@ print(f"LSTM F1-Score Ortalama: {np.mean(lstm_f1_scores):.4f} (± {np.std(lstm_f
 print(f"GRU F1-Score Ortalama: {np.mean(gru_f1_scores):.4f} (± {np.std(gru_f1_scores):.4f})")
 print(f"Automata F1-Score (Tek Test): {f1_auto_batadal:.4f}")
 
+# WİLCOXON İSTATİSTİKSEL ANLAMLILIK TESTİ
+print("\n--- İstatistiksel Anlamlılık Testi (Wilcoxon) ---")
+try:
+    stat, p_value = wilcoxon(lstm_f1_scores, gru_f1_scores)
+    print(f"Wilcoxon Test İstatistiği: {stat:.4f}, p-değeri: {p_value:.4f}")
+    if p_value < 0.05:
+        print("Sonuç: LSTM ve GRU modellerinin performansları arasındaki fark istatistiksel olarak ANLAMLIDIR (p < 0.05).")
+    else:
+        print("Sonuç: LSTM ve GRU modellerinin performansları arasındaki fark istatistiksel olarak ANLAMLI DEĞİLDİR (p >= 0.05).")
+except Exception as e:
+    print(f"Wilcoxon testi hesaplanamadı (Değerler tamamen aynı veya yetersiz): {e}")
+
 
 # AUTOMATA PARAMETRE ANALİZİ
 print("\n--- Otomata Parametre Analizi Başlıyor ---")
@@ -210,13 +218,10 @@ print_metrics("LSTM - Noisy", y_test_seq, lstm_preds_noisy)
 
 # GÖRSELLEŞTİRME (CONFUSION MATRIX & PR CURVE)
 print("\n--- Grafik Çizim İşlemleri Başlıyor ---")
-import matplotlib.pyplot as plt
-
 # 1. Automata İçin Confusion Matrix
 plot_confusion_matrix(y_test_seq[:min_len], automata_preds_hizali[:min_len], model_name="Automata (BATADAL)")
 
 # 2. LSTM İçin Confusion Matrix (Orijinal Test Verisi)
-# LSTM tahminlerini görselleştirmek için modele tekrar tahmin yaptırıyoruz
 lstm_preds_prob = lstm_model.predict(X_test_seq, verbose=0)
 lstm_preds_gorsel = np.where(lstm_preds_prob > 0.5, 1, 0)
 plot_confusion_matrix(y_test_seq, lstm_preds_gorsel, model_name="LSTM (BATADAL)")
